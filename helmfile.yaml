@@ -1,0 +1,17 @@
+{{- $env := or (env "ENVIRONMENT") "minikube" }}
+{{- $ver := or (env "OVERRIDE_TAG") (env "DRONE_TAG") "latest" }}
+helmDefaults:
+  tillerNamespace: shipping-api
+  wait: true
+  timeout: 800
+  force: true
+  verify: false
+releases:
+  - name: schema-consolidator-api
+    namespace: shipping-api
+    chart: spscommerce/sps-default-chart
+    version: 2.4.1
+    values:
+    - version: {{ $ver }}
+    - './deployment/values/{{ $env }}.yaml'
+    

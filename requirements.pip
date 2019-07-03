@@ -1,0 +1,11 @@
+flask==1.0.2
+uWSGI==2.0.17
+requests==2.19.1
+jsonschema==3.0.0a3
+python-json-logger==0.1.9
+flask_api==1.1
+flake8>=3.5.0,<3.6
+marshmallow==3.0.0b12
+sqlalchemy==1.2.11
+psycopg2==2.7.5
+PyMySQL
