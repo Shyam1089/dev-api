@@ -50,30 +50,38 @@ Response:
 ```json
 [
     {
+        "pack_stock_management": "decrmnt_products",
+        "is_pack": null,
         "formato_peq": null,
         "agua": null,
-        "categ_id": 3,
-        "name": "PACK 1,5 l. BEZOYA 6 UND",
-        "type": "consu",
-        "list_price": "4.00",
+        "categ_id": 1,
+        "name": "SERVICIOS DE NOTARIOS",
+        "type": "service",
+        "list_price": "1.00",
         "description": null,
-        "id": 172,
-        "template_id": 172,
+        "id": 10,
+        "template_id": 10,
         "ean13": null,
-        "default_code": null
+        "default_code": null,
+        "pack_items": [],
+        "image_url": "http://gestiontest.fontoasis.es/website/image/product.template/10/image_medium"
     },
     {
+        "pack_stock_management": "decrmnt_products",
+        "is_pack": null,
         "formato_peq": null,
         "agua": null,
-        "categ_id": 3,
-        "name": "CAJA 0,5 l. BEZOYA 24 UND",
-        "type": "consu",
-        "list_price": "15.00",
+        "categ_id": 1,
+        "name": "SERVICIOS DE NOTARIOS",
+        "type": "service",
+        "list_price": "1.00",
         "description": null,
-        "id": 173,
-        "template_id": 173,
+        "id": 10,
+        "template_id": 10,
         "ean13": null,
-        "default_code": null
+        "default_code": null,
+        "pack_items": [],
+        "image_url": "http://gestiontest.fontoasis.es/website/image/product.template/10/image_medium"
     }
 ]
 ```
@@ -87,30 +95,38 @@ Response:
 ```json
 [
     {
+        "pack_stock_management": "decrmnt_products",
+        "is_pack": null,
         "formato_peq": null,
         "agua": null,
-        "categ_id": 3,
-        "name": "PACK 1,5 l. BEZOYA 6 UND",
-        "type": "consu",
-        "list_price": "4.00",
+        "categ_id": 1,
+        "name": "SERVICIOS DE NOTARIOS",
+        "type": "service",
+        "list_price": "1.00",
         "description": null,
-        "id": 172,
-        "template_id": 172,
+        "id": 10,
+        "template_id": 10,
         "ean13": null,
-        "default_code": null
+        "default_code": null,
+        "pack_items": [],
+        "image_url": "http://gestiontest.fontoasis.es/website/image/product.template/10/image_medium"
     },
     {
+        "pack_stock_management": "decrmnt_products",
+        "is_pack": null,
         "formato_peq": null,
         "agua": null,
-        "categ_id": 3,
-        "name": "CAJA 0,5 l. BEZOYA 24 UND",
-        "type": "consu",
-        "list_price": "15.00",
+        "categ_id": 1,
+        "name": "SERVICIOS DE NOTARIOS",
+        "type": "service",
+        "list_price": "1.00",
         "description": null,
-        "id": 173,
-        "template_id": 173,
+        "id": 10,
+        "template_id": 10,
         "ean13": null,
-        "default_code": null
+        "default_code": null,
+        "pack_items": [],
+        "image_url": "http://gestiontest.fontoasis.es/website/image/product.template/10/image_medium"
     }
 ]
 ```
@@ -124,17 +140,21 @@ Response:
 ```json
 [
     {
+        "pack_stock_management": "decrmnt_products",
+        "is_pack": null,
         "formato_peq": null,
         "agua": null,
         "categ_id": 1,
-        "name": "TRANSPORTE GIRONA-BARCELONA",
+        "name": "SERVICIOS DE NOTARIOS",
         "type": "service",
-        "list_price": "0.00",
+        "list_price": "1.00",
         "description": null,
-        "id": 4,
-        "template_id": 4,
+        "id": 10,
+        "template_id": 10,
         "ean13": null,
-        "default_code": null
+        "default_code": null,
+        "pack_items": [],
+        "image_url": "http://gestiontest.fontoasis.es/website/image/product.template/10/image_medium"
     }
 ]
 ```
@@ -363,7 +383,7 @@ Sample:
   "partner_invoice_id": 36,
   "partner_shipping_id": 36,
   "pricelist_id": 1,
-  "order_line": [{"name":"Laptop E5023", "product_uom_qty": 1.0, "price_unit": 20.0, "product_id": 33, "product_uom":1 ,"tax_id": 1}],
+  "order_line": [{"name":"Laptop E5023", "product_uom_qty": 1.0, "price_unit": 20.0, "product_id": 33, "product_uom":1 ,"tax_id": 1, "is_pack": 0}],
   "visit": {"higiene": 1}
 }
 ```

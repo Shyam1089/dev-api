@@ -89,15 +89,19 @@ def get_products(pid=False):
     conn, pg_cur = get_pg_cursor()
     if pg_cur:
         if not pid:
-            pg_cur.execute("SELECT t.formato_peq, t.agua, t.categ_id, t.name, t.type, t.list_price, t.description, v.id as id, t.id as template_id, v.ean13, v.default_code from product_template t INNER JOIN product_product v ON t.id=v.product_tmpl_id ORDER BY v.id" )
+            pg_cur.execute("SELECT t.pack_stock_management, t.is_pack, t.formato_peq, t.agua, t.categ_id, t.name, t.type, t.list_price, t.description, v.id as id, t.id as template_id, v.ean13, v.default_code from product_template t INNER JOIN product_product v ON t.id=v.product_tmpl_id ORDER BY v.id" )
         else:
-            pg_cur.execute("SELECT t.formato_peq, t.agua, t.categ_id, t.name, t.type, t.list_price, t.description, v.id as id, t.id as template_id, v.ean13, v.default_code  from product_template t INNER JOIN product_product v ON t.id=v.product_tmpl_id WHERE v.id=%s"%pid )
+            pg_cur.execute("SELECT t.pack_stock_management, t.is_pack, t.formato_peq, t.agua, t.categ_id, t.name, t.type, t.list_price, t.description, v.id as id, t.id as template_id, v.ean13, v.default_code  from product_template t INNER JOIN product_product v ON t.id=v.product_tmpl_id WHERE v.id=%s"%pid )
 
         rows = pg_cur.fetchall()
         for row in rows:
-            # url = "http://localhost:8069/web/image?model=product.template&id=%s&field=image_medium"%(row["template_id"])
-            # row.update({'list_price': str(row['list_price']), "image_url": url})
-            row.update({'list_price': str(row['list_price'])})
+            pack = []
+            if row['is_pack']:
+                pg_cur.execute("""SELECT product_name, product_quantity from product_pack where wk_product_template =%s"""%(str(row['template_id'])))
+                pack = pg_cur.fetchall()
+                row.update({"pack_items": pack})
+            image_url = CONF.get("ODOO_URL")+"/website/image/product.template/"+str(row['template_id'])+"/image_medium"
+            row.update({'list_price': str(row['list_price']), "pack_items": pack, "image_url": image_url})
         pg_cur.close()
         conn.close()
     return rows
@@ -130,7 +134,14 @@ def get_product_by_category(pid):
         pg_cur.execute("SELECT t.formato_peq, t.agua, t.categ_id, t.name, t.type, t.list_price, t.description, v.id as id, t.id as template_id, v.ean13, v.default_code from product_template t INNER JOIN product_product v ON t.id=v.product_tmpl_id WHERE t.categ_id=%s"%pid )
         dataaa = pg_cur.fetchall()
         for row in dataaa:
-            row.update({'list_price': str(row['list_price'])})
+            pack = []
+            if row['is_pack']:
+                pg_cur.execute("""SELECT product_name, product_quantity from product_pack where wk_product_template =%s"""%(str(row['template_id'])))
+                pack = pg_cur.fetchall()
+                row.update({"pack_items": pack})
+            image_url = CONF.get("ODOO_URL")+"website/image/product.template/"+str(row['template_id'])+"/image_medium"
+
+            row.update({'list_price': str(row['list_price']), "pack_items": pack, "image_url": image_url})
         pg_cur.close()
         conn.close()
         if dataaa:
@@ -276,8 +287,8 @@ def get_user_visits(pid):
             if connection:
                 try:
                     with connection.cursor() as cursor:
-                        # cursor.execute('SELECT CLIENTE FROM clientes WHERE odoo_code=%s', erp_id)
-                        cursor.execute('SELECT CLIENTE FROM clientes WHERE odoo_code=%s', 1759)
+                        cursor.execute('SELECT CLIENTE FROM clientes WHERE odoo_code=%s', erp_id)
+                        # cursor.execute('SELECT CLIENTE FROM clientes WHERE odoo_code=%s', 1759)
                         result = cursor.fetchone()
                         if result:
                             cursor.execute('SELECT * FROM visits WHERE cliente=%s', str(result.get("CLIENTE")))
@@ -328,19 +339,31 @@ def create_order(json_data, visit_data):
     common = xmlrpclib.ServerProxy('{}/xmlrpc/2/common'.format(url))
     sock = xmlrpclib.ServerProxy('{}/xmlrpc/2/object'.format(url))
     uid = common.login(db, username, password)
-    # print (uid)
     order_id = False
     if uid:
         try:
             data = sock.execute(db, uid, password, 'sale.order', 'default_get', ["pricelist_id", "company_id", "team_id", "picking_policy", "warehouse_id"])
             data.update(json_data)
-            lines = []
+            packs = []
+            non_pack = []
             for line in data.get("order_line",[]):
                 if line.get("tax_id"):
                     line.update({"tax_id" :[(6,0,[int(line.get("tax_id"))])]})
-                lines.append([(0,0,line)])
-            data.update({"order_line": lines})
+                if line['is_pack']:
+                    packs.append(line)
+                else:
+                    non_pack.append((0,0,line))
+            data.update({"order_line": non_pack})
             order_id = sock.execute(db, uid, password, 'sale.order', 'create', data)
+
+            for pack in packs:
+                wiz_id = sock.execute(db, uid, password, 'product.pack.wizard', 'create', {
+                    'name':pack['name'],
+                    'product_name':pack['product_id'],
+                    'quantity': pack['product_uom_qty'],
+                    'unit_price':pack["price_unit"]
+                })
+                sock.execute(db, uid, password, 'product.pack.wizard', 'add_product_button', [wiz_id], {'active_id':order_id})
         except Exception as e:
             order_id = False
     if not order_id:
@@ -350,7 +373,7 @@ def create_order(json_data, visit_data):
         if connection:
             try:
                 with connection.cursor() as cursor:
-                    cursor.execute('SELECT CLIENTE FROM clientes WHERE odoo_code=%s', erp_id)
+                    cursor.execute('SELECT CLIENTE FROM clientes WHERE odoo_code=%s', json_data['partner_id'])
                     # cursor.execute('SELECT CLIENTE FROM clientes WHERE odoo_code=%s', 1759)
                     result = cursor.fetchone()
                     if result:
@@ -369,7 +392,7 @@ def create_order(json_data, visit_data):
                 connection.close()
 
 
-    # return {'status': "sucess", "order_id": order_id}, False
+    return {'status': "sucess", "order_id": order_id}, False
 
 
 def get_visit_data(json_data, visit_data):
