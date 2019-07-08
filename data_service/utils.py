@@ -96,10 +96,9 @@ def get_products(pid=False):
         rows = pg_cur.fetchall()
         for row in rows:
             pack = []
-            if row['is_pack']:
+            if row.get('is_pack',False):
                 pg_cur.execute("""SELECT product_name, product_quantity from product_pack where wk_product_template =%s"""%(str(row['template_id'])))
                 pack = pg_cur.fetchall()
-                row.update({"pack_items": pack})
             image_url = CONF.get("ODOO_URL")+"/website/image/product.template/"+str(row['template_id'])+"/image_medium"
             row.update({'list_price': str(row['list_price']), "pack_items": pack, "image_url": image_url})
         pg_cur.close()
@@ -135,10 +134,9 @@ def get_product_by_category(pid):
         dataaa = pg_cur.fetchall()
         for row in dataaa:
             pack = []
-            if row['is_pack']:
+            if row.get("is_pack",False):
                 pg_cur.execute("""SELECT product_name, product_quantity from product_pack where wk_product_template =%s"""%(str(row['template_id'])))
                 pack = pg_cur.fetchall()
-                row.update({"pack_items": pack})
             image_url = CONF.get("ODOO_URL")+"website/image/product.template/"+str(row['template_id'])+"/image_medium"
 
             row.update({'list_price': str(row['list_price']), "pack_items": pack, "image_url": image_url})
