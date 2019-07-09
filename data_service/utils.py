@@ -476,3 +476,45 @@ def calculate_date(rec):
             break
         curr = curr + timedelta(days=1)
     return curr
+
+
+def get_users_address(pid=False):
+    rows = {'status':"NotFound"}
+    address = []
+    conn, pg_cur = get_pg_cursor()
+    if pg_cur:
+        pg_cur.execute("""SELECT  "res_users"."id" as "id","res_users"."partner_id" as "partner_id" FROM "res_users" WHERE "res_users".id IN (%s)"""%(pid))
+        rows = pg_cur.fetchone()
+        if rows and rows.get('partner_id',False):
+            rows.update({"partner_id": rows['partner_id']})
+            pg_cur.execute("""SELECT "id", "name", "type", "function", "street", "street2", "city", "zip", "email", "phone", "mobile" FROM "res_partner" WHERE parent_id IN (%s)"""%(rows['partner_id']))
+            address = pg_cur.fetchall()
+            rows.update({"status": "success"})
+        pg_cur.close()
+        conn.close()
+    rows.update({"address": address})
+    return rows
+
+
+def create_users_address(pid, request_json):
+    rows = {'status':"NotFound"}
+    address = []
+    conn, pg_cur = get_pg_cursor()
+    if pg_cur:
+        pg_cur.execute("""SELECT  "res_users"."id" as "id","res_users"."partner_id" as "partner_id" FROM "res_users" WHERE "res_users".id IN (%s)"""%(pid))
+        rows = pg_cur.fetchone()
+        pg_cur.close()
+        conn.close()
+        partner_id = rows.get('partner_id',False)
+        if partner_id:
+            request_json.update({"type": "contact", "use_parent_address": False, "parent_id": partner_id})
+            url = CONF.get("ODOO_URL")
+            username = CONF.get("ODOO_USER")
+            password = CONF.get("ODOO_PASS")
+            db = CONF.get("ODOO_DB")
+            common = xmlrpclib.ServerProxy('{}/xmlrpc/2/common'.format(url))
+            sock = xmlrpclib.ServerProxy('{}/xmlrpc/2/object'.format(url))
+            uid = common.login(db, username, password)
+            rec_id = sock.execute(db, uid, password, 'res.partner', 'create', request_json)
+            rows.update({"status": "success", "address_id": rec_id})
+    return rows

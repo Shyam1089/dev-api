@@ -27,3 +27,8 @@ class ValidateOrder(Schema):
 class ValidateInput(Schema):
     username = fields.String(required=True)
     password = fields.String(required=True)
+
+
+class ValidateAddressInput(Schema):
+    name = fields.String(required=True)
+    password = fields.String(required=True)

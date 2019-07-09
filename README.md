@@ -250,6 +250,68 @@ Success Response:
 ```
 
 
+### Get user address details:
+URL: /users/<uid>/address
+Method: GET
+Description: This endpoint gives user's address details available in Odoo database
+
+Success Response:
+```json
+{
+    "id": 1,
+    "partner_id": 3,
+    "status": "success",
+    "address": [
+        {
+            "id": 12327,
+            "name": "str test",
+            "type": "contact",
+            "function": "reception",
+            "street": "street",
+            "street2": "street",
+            "city": "Madrid",
+            "zip":  201301,
+            "email": "test@test",
+            "phone": "12345",
+            "mobile": "12345"
+        }
+    ]
+}
+```
+
+
+### Create user address details:
+URL: /users/<uid>/create-address
+Method: POST
+Description: This endpoint creates a new address in Odoo
+
+Input Response:
+```json
+{
+    "name": "str test",
+    "function": "reception",
+    "street": "street",
+    "street2": "street",
+    "city": "Madrid",
+    "zip":  201301,
+    "email": "test@test",
+    "phone": "12345",
+    "mobile": "12345"
+}
+```
+
+
+Success Response:
+```json
+{
+    "id": 1,
+    "partner_id": 3,
+    "status": "success",
+    "address_id": 12327
+}
+```
+
+
 ### Reset user password:
 URL: /users/<uid>/reset-pass
 Method: POST

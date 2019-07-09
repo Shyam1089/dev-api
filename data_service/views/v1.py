@@ -9,7 +9,7 @@ import data_service.utils as utils
 import marshmallow
 from copy import deepcopy
 
-from data_service.schema import ValidateInput, ValidateOrder, ValidateOrderLine
+from data_service.schema import ValidateInput, ValidateOrder, ValidateOrderLine, ValidateAddressInput
 
 JSON_TYPE_HEADERS = {'Content-Type': 'application/json'}
 schema = Blueprint('schema', __name__)
@@ -213,6 +213,48 @@ def create_new_order() -> Response:
     data, message = utils.create_order(request_json, visit_data)
     if message:
         return message
+    resp: Response = make_response(json.dumps(data), status.HTTP_200_OK)
+    resp.headers = JSON_TYPE_HEADERS
+    return resp
+
+
+@schema.route("/users/<uid>/address", methods=['GET'])
+# @utils.error_handler()
+def get_user_addresses(uid: int) -> Response:
+    if uid:
+        try:
+            temp = int(uid)
+        except:
+            return make_response(json.dumps({"error": "BadRequest", "errorDescription":"User ID must be an Integer"}), status.HTTP_400_BAD_REQUEST)
+    else:
+        return make_response(json.dumps({"error": "BadRequest", "errorDescription":"User ID is required"}), status.HTTP_400_BAD_REQUEST)
+
+    data = utils.get_users_address(uid)
+    resp: Response = make_response(json.dumps(data), status.HTTP_200_OK)
+    resp.headers = JSON_TYPE_HEADERS
+    return resp
+
+
+@schema.route("/users/<uid>/create-address", methods=['POST'])
+# @utils.error_handler()
+def create_user_addresses(uid: int) -> Response:
+    if uid:
+        try:
+            temp = int(uid)
+        except:
+            return make_response(json.dumps({"error": "BadRequest", "errorDescription":"User ID must be an Integer"}), status.HTTP_400_BAD_REQUEST)
+    else:
+        return make_response(json.dumps({"error": "BadRequest", "errorDescription":"User ID is required"}), status.HTTP_400_BAD_REQUEST)
+    try:
+        request_json = request.get_json(force=True)
+        if not isinstance(request_json, dict):
+            raise exceptions.InvalidSyntaxError('JSON syntax error in request body')
+    except marshmallow.exceptions.ValidationError as e:
+        request_json = {}
+
+    if not request_json.get("name",False):
+        raise exceptions.InvalidSyntaxError('Contact name is mandatory.')
+    data = utils.create_users_address(uid, request_json)
     resp: Response = make_response(json.dumps(data), status.HTTP_200_OK)
     resp.headers = JSON_TYPE_HEADERS
     return resp
