@@ -14,5 +14,6 @@ CONF = {
 	"SQL_HOST": "",
 	"SQL_USER": "",
 	"SQL_PASS": "",
-	"SQL_DB": ""
+	"SQL_DB": "",
+	"SECRET_KEY":  'the quick brown fox jumps over the lazy dog'
 }

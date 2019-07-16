@@ -1,28 +1,61 @@
 import json
-from copy import deepcopy
-from collections import defaultdict
 import traceback
-import marshmallow
 import os
+import pickle
 
 from datetime import datetime, timedelta
 from functools import wraps
-from enum import unique, Enum
 
 from flask import Response, request, make_response
 from flask_api import status
 
 import data_service.errors as exceptions
-from data_service.errors import InternalServerError, get_error_response
 from xmlrpc import client as xmlrpclib
 import psycopg2
 import psycopg2.extras
 import logging as logger
 import pymysql.cursors
 
+from itsdangerous import (TimedJSONWebSignatureSerializer
+                          as Serializer, BadSignature, SignatureExpired)
+
 from data_service.credentials import CONF
 
 JSON_TYPE_HEADERS = {'Content-Type': 'application/json'}
+
+TESTDATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
+
+
+def verify_auth_token(token):
+    s = Serializer(CONF['SECRET_KEY'])
+    try:
+        data = s.loads(token)
+    except SignatureExpired:
+        return None    # valid token, but expired
+    except BadSignature:
+        return None    # invalid token
+    uid = data.get("id")
+    userdata = read_data()
+    if userdata.get(uid, False):
+        return uid
+    return None
+
+
+
+def update_data(data = {}):
+    with open(TESTDATA_DIR + '/user_data.pk', 'wb') as fi:
+        pickle.dump(data, fi)
+
+
+def read_data():
+    try:
+        with open(TESTDATA_DIR + '/user_data.pk', 'rb') as fi:
+            return pickle.load(fi)
+    except:
+        with open(TESTDATA_DIR + '/user_data.pk', 'wb') as fi:
+            pickle.dump({}, fi)
+        with open(TESTDATA_DIR + '/user_data.pk', 'rb') as fi:
+            return pickle.load(fi)
 
 
 def get_error_response(exception):
@@ -51,12 +84,11 @@ def error_handler():
             except Exception as e:
                 logger.error('INTERNAL SERVER ERROR: (%s)\n%s'%(e,traceback.print_exc()))
                 resp: Response = make_response(json.dumps(get_error_response(
-                    InternalServerError())), status.HTTP_500_INTERNAL_SERVER_ERROR)
+                    exceptions.InternalServerError())), status.HTTP_500_INTERNAL_SERVER_ERROR)
                 resp.headers = JSON_TYPE_HEADERS
                 return resp
         return call_method
     return decorate
-
 
 
 def get_msql_cursor():
@@ -201,8 +233,13 @@ def authenticate_user(json_data):
     # result = sock.execute(db, uid, password, 'res.partner', 'search_read', [['id', '=', 1]])
     # number_of_customers = sock.execute(db, uid, password, 'res.partner', 'search_count', [])
     if uid:
-        return {'status': "success", "user_id": uid}
-    return {'status': "fail", "user_id": False}
+        s = Serializer(CONF['SECRET_KEY'] , expires_in = 3600)
+        token =  s.dumps({'id': uid})
+        data = read_data()
+        data.update({uid: "exists"})
+        update_data(data)
+        return {'status': "success", "user_id": uid, "token": token.decode("utf-8") }
+    return {'status': "fail", "user_id": False, "token":False}
 
 
 def get_user_data(pid=False):
@@ -308,21 +345,24 @@ def get_user_visits(pid):
 
 
 def reset_user_password(user_id, json_data):
-    url = CONF.get("ODOO_URL")
-    username = CONF.get("ODOO_USER")
-    password = CONF.get("ODOO_PASS")
-    db = CONF.get("ODOO_DB")
-    common = xmlrpclib.ServerProxy('{}/xmlrpc/2/common'.format(url))
-    sock = xmlrpclib.ServerProxy('{}/xmlrpc/2/object'.format(url))
-    uid = common.login(db, username, password)
     try:
-        rec_id = sock.execute(db, uid, password, 'change.password.wizard', 'create', {
-            "user_ids" :[(0,0,{"user_login": json_data.get("username"), "new_passwd": json_data.get("password"), "user_id": user_id})]
-            })
-        number_of_customers = sock.execute(db, uid, password, 'change.password.wizard', 'change_password_button', [rec_id])
+        url = CONF.get("ODOO_URL")
+        username = CONF.get("ODOO_USER")
+        password = CONF.get("ODOO_PASS")
+        db = CONF.get("ODOO_DB")
+        common = xmlrpclib.ServerProxy('{}/xmlrpc/2/common'.format(url))
+        sock = xmlrpclib.ServerProxy('{}/xmlrpc/2/object'.format(url))
+        uid = common.login(db, username, password)
+        result = sock.execute(db, uid, password, 'res.users', 'write', [user_id], {"password": json_data.get("password")})
+        if result:
+            data = read_data()
+            data.pop(user_id)
+            # data.update({user_id: "exists"})
+            update_data(data)
+            return {'status': "success", "description": "Password updated!"}
     except:
-        return {'status': "success", "description": "Password updated!"}
-    return {'status': "fail", "user_id": False}
+        pass
+    return {'status': "fail",  "description": "Password update failed!"}
 
 
 def create_order(json_data, visit_data):
@@ -364,8 +404,10 @@ def create_order(json_data, visit_data):
                 sock.execute(db, uid, password, 'product.pack.wizard', 'add_product_button', [wiz_id], {'active_id':order_id})
         except Exception as e:
             order_id = False
+            print (e)
+            return False, {"status": "fail", "errorDescription": str(e)}
     if not order_id:
-        return {"status": "fail", "errorDescription": str(e)}
+        return False, {"status": "fail", "errorDescription": str(e)}
     else:
         connection = get_msql_cursor()
         if connection:
@@ -517,4 +559,57 @@ def create_users_address(pid, request_json):
             uid = common.login(db, username, password)
             rec_id = sock.execute(db, uid, password, 'res.partner', 'create', request_json)
             rows.update({"status": "success", "address_id": rec_id})
+    return rows
+
+
+def get_partner(data):
+    rows = {'status':"NotFound"}
+    partner_data = {}
+    conn, pg_cur = get_pg_cursor()
+    tin = 'ES'+data.get('tin',"")
+    rows.update({"vat":tin})
+    if pg_cur:
+        pg_cur.execute('SELECT id, name, vat, parent_id FROM "res_partner" WHERE vat=%s', (tin,))
+        results = pg_cur.fetchall()
+        if results:
+            for result in results:
+                if not result.get("parent_id"):
+                    partner_data = result
+                    break
+        if partner_data:
+            rows.update({"status": "success"})
+        pg_cur.close()
+        conn.close()
+    rows.update(partner_data)
+    return rows
+
+
+
+def create_user_partner(data):
+    rows = {'status':"error"}
+    try:
+        url = CONF.get("ODOO_URL")
+        username = CONF.get("ODOO_USER")
+        password = CONF.get("ODOO_PASS")
+        db = CONF.get("ODOO_DB")
+        common = xmlrpclib.ServerProxy('{}/xmlrpc/2/common'.format(url))
+        sock = xmlrpclib.ServerProxy('{}/xmlrpc/2/object'.format(url))
+        uid = common.login(db, username, password)
+        # result = sock.execute(db, uid, password, 'res.partner', 'search_read', [['id', '=', 1]])
+        # number_of_customers = sock.execute(db, uid, password, 'res.partner', 'search_count', [])
+        if uid:
+            result = sock.execute(db, uid, password, 'res.groups', 'search', [('is_portal','=',True)])
+            vals = {
+                'partner_id': data.get("partner_id"),
+                'login': data.get("email"),
+                'groups_id':[(6,0,result)]
+            }
+            result = sock.execute(db, uid, password, 'res.users', 'create', vals)
+            if result:
+                rows.update({'status': "success", "user_id": result})
+                result = sock.execute(db, uid, password, 'res.users', 'write', result, {"password": data.get("password")})
+                # rows.update({'status': "success", "user_id": result})
+    except Exception as e:
+        rows.update({'errorDescription':str(e)})
+
     return rows

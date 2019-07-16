@@ -2,173 +2,22 @@
 ***
 
 
-### Get all Categories:
-URL: /categories
-Method: GET
-Description: This endpoint gives a list of all categories available in Odoo database
-
-Response:
-```json
-[
-    {
-        "id": 3,
-        "name": "Agua",
-        "parent_id": 1
-    },
-    {
-        "id": 1,
-        "name": "All",
-        "parent_id": null
-    }
-]
-```
-
-
-### Get specific category:
-URL: /categories/<categ_id>
-Method: GET
-Description: This endpoint gives details of a specific category in a json object
-
-Response:
-```json
-    {
-        "id": 3,
-        "name": "Agua",
-        "parent_id": 1
-    }
-```
-
-
-
-
-### Get all products linked to a category:
-URL: /categories/<categ_id>/products
-Method: GET
-Description: This endpoint gives a list of all products assocuated with the secific "categ_id" in Odoo database
-
-Response:
-```json
-[
-    {
-        "pack_stock_management": "decrmnt_products",
-        "is_pack": null,
-        "formato_peq": null,
-        "agua": null,
-        "categ_id": 1,
-        "name": "SERVICIOS DE NOTARIOS",
-        "type": "service",
-        "list_price": "1.00",
-        "description": null,
-        "id": 10,
-        "template_id": 10,
-        "ean13": null,
-        "default_code": null,
-        "pack_items": [],
-        "image_url": "http://gestiontest.fontoasis.es/website/image/product.template/10/image_medium"
-    },
-    {
-        "pack_stock_management": "decrmnt_products",
-        "is_pack": null,
-        "formato_peq": null,
-        "agua": null,
-        "categ_id": 1,
-        "name": "SERVICIOS DE NOTARIOS",
-        "type": "service",
-        "list_price": "1.00",
-        "description": null,
-        "id": 10,
-        "template_id": 10,
-        "ean13": null,
-        "default_code": null,
-        "pack_items": [],
-        "image_url": "http://gestiontest.fontoasis.es/website/image/product.template/10/image_medium"
-    }
-]
-```
-
-### Get All Products:
-URL: /products
-Method: GET
-Description: This endpoint gives details of all products in a list of json object present in Odoo
-
-Response:
-```json
-[
-    {
-        "pack_stock_management": "decrmnt_products",
-        "is_pack": null,
-        "formato_peq": null,
-        "agua": null,
-        "categ_id": 1,
-        "name": "SERVICIOS DE NOTARIOS",
-        "type": "service",
-        "list_price": "1.00",
-        "description": null,
-        "id": 10,
-        "template_id": 10,
-        "ean13": null,
-        "default_code": null,
-        "pack_items": [],
-        "image_url": "http://gestiontest.fontoasis.es/website/image/product.template/10/image_medium"
-    },
-    {
-        "pack_stock_management": "decrmnt_products",
-        "is_pack": null,
-        "formato_peq": null,
-        "agua": null,
-        "categ_id": 1,
-        "name": "SERVICIOS DE NOTARIOS",
-        "type": "service",
-        "list_price": "1.00",
-        "description": null,
-        "id": 10,
-        "template_id": 10,
-        "ean13": null,
-        "default_code": null,
-        "pack_items": [],
-        "image_url": "http://gestiontest.fontoasis.es/website/image/product.template/10/image_medium"
-    }
-]
-```
-
-### Get specific product:
-URL: /products/<prod_id>
-Method: GET
-Description: This endpoint gives details of a specifc products in a list of json object present in Odoo
-
-Response:
-```json
-[
-    {
-        "pack_stock_management": "decrmnt_products",
-        "is_pack": null,
-        "formato_peq": null,
-        "agua": null,
-        "categ_id": 1,
-        "name": "SERVICIOS DE NOTARIOS",
-        "type": "service",
-        "list_price": "1.00",
-        "description": null,
-        "id": 10,
-        "template_id": 10,
-        "ean13": null,
-        "default_code": null,
-        "pack_items": [],
-        "image_url": "http://gestiontest.fontoasis.es/website/image/product.template/10/image_medium"
-    }
-]
-```
-
-
 ### Authenticate a User:
 URL: /authenticate
 Method: POST
-Input: ```json{"username": <username>, "password": <password>}```
-Description: This endpoint authenticates the user with given credentials.
+Headers: ```json{
+    'content-type': 'application/json'
+}```
+Input: ```json {"username": username, "password": password}```
+Description: This endpoint authenticates the user with given credentials and returns back an auth token which is to be passed in header under 'Authorization' key.
 
 Success Response:
 ```json
-{"status": "success", "user_id": <uid>}
+{
+    "status": "success",
+    "user_id": 1,
+    "token": "eyJhbGci..............k4Q5WresvNWvQ"
+}
 ```
 In case of failure:
 ```json
@@ -177,9 +26,13 @@ In case of failure:
 
 
 ### Get user details:
-URL: /users/<uid>
+URL: /user
 Method: GET
-Description: This endpoint gives user's details available in Odoo database
+Headers: ```json{
+    'content-type': 'application/json',
+    'Authorization': "eyJ0eXAiOiJ_5ysce6YET5Ew"
+}```
+Description: This endpoint gives user's details available in Odoo database. User ID will be computed from the Auth token passed in header.
 
 Success Response:
 ```json
@@ -203,8 +56,12 @@ Success Response:
 
 
 ### Get user's order details:
-URL: /users/<uid>/orders
+URL: /user/orders
 Method: GET
+Headers: ```json{
+    'content-type': 'application/json',
+    'Authorization': "eyJ0eXAiOiJ_5ysce6YET5Ew"
+}```
 Description: This endpoint gives a list of all the orders for a specifc user available in Odoo database
 
 Success Response:
@@ -251,8 +108,12 @@ Success Response:
 
 
 ### Get user address details:
-URL: /users/<uid>/address
+URL: /user/address
 Method: GET
+Headers: ```json{
+    'content-type': 'application/json',
+    'Authorization': "eyJ0eXAiOiJ_5ysce6YET5Ew"
+}```
 Description: This endpoint gives user's address details available in Odoo database
 
 Success Response:
@@ -281,8 +142,12 @@ Success Response:
 
 
 ### Create user address details:
-URL: /users/<uid>/create-address
+URL: /user/create-address
 Method: POST
+Headers: ```json{
+    'content-type': 'application/json',
+    'Authorization': "eyJ0eXAiOiJ_5ysce6YET5Ew"
+}```
 Description: This endpoint creates a new address in Odoo
 
 Input Response:
@@ -304,18 +169,25 @@ Input Response:
 Success Response:
 ```json
 {
-    "id": 1,
-    "partner_id": 3,
+    "id": 20,
+    "partner_id": 1872,
     "status": "success",
-    "address_id": 12327
+    "address_id": 12335
 }
 ```
+"id" - > userID
+"partner_id" - > related PartnerID
+"address_id" - > newly created Address
 
 
 ### Reset user password:
-URL: /users/<uid>/reset-pass
+URL: /user/reset-pass
 Method: POST
-Input: ```json{"username": <uname>, "password": <password>}```
+Headers: ```json{
+    'content-type': 'application/json',
+    'Authorization': "eyJ0eXAiOiJ_5ysce6YET5Ew"
+}```
+Input: ```json{"password": "passowrd"}```
 Description: This endpoint will reset user's password.
 
 Success Response:
@@ -329,7 +201,7 @@ Failure response:
 
 
 ### Get user's visits details:
-URL: /users/<uid>/visits
+URL: /user/visits
 Method: GET
 Description: This endpoint gives a list of all the orders for a specifc user available in MySQL database
 
@@ -386,9 +258,192 @@ Success Response:
 ```
 
 
-### Get specific order detail:
-URL: /orders/<order_id>
+### Get all Categories:
+URL: /categories
 Method: GET
+Headers: ```json{
+    'content-type': 'application/json',
+    'Authorization': "eyJ0eXAiOiJ_5ysce6YET5Ew"
+}```
+
+Description: This endpoint gives a list of all categories available in Odoo database
+
+Response:
+```json
+[
+    {
+        "id": 3,
+        "name": "Agua",
+        "parent_id": 1
+    },
+    {
+        "id": 1,
+        "name": "All",
+        "parent_id": null
+    }
+]
+```
+
+
+### Get specific category:
+URL: /categories/{categ_id}
+Method: GET
+Headers: ```json{
+    'content-type': 'application/json',
+    'Authorization': "eyJ0eXAiOiJ_5ysce6YET5Ew"
+}```
+Description: This endpoint gives details of a specific category in a json object
+
+Response:
+```json
+    {
+        "id": 3,
+        "name": "Agua",
+        "parent_id": 1
+    }
+```
+
+
+
+
+### Get all products linked to a category:
+URL: /categories/{categ_id}/products
+Method: GET
+Headers: ```json{
+    'content-type': 'application/json',
+    'Authorization': "eyJ0eXAiOiJ_5ysce6YET5Ew"
+}```
+Description: This endpoint gives a list of all products assocuated with the secific "categ_id" in Odoo database
+
+Response:
+```json
+[
+    {
+        "pack_stock_management": "decrmnt_products",
+        "is_pack": null,
+        "formato_peq": null,
+        "agua": null,
+        "categ_id": 1,
+        "name": "SERVICIOS DE NOTARIOS",
+        "type": "service",
+        "list_price": "1.00",
+        "description": null,
+        "id": 10,
+        "template_id": 10,
+        "ean13": null,
+        "default_code": null,
+        "pack_items": [],
+        "image_url": "http://gestiontest.fontoasis.es/website/image/product.template/10/image_medium"
+    },
+    {
+        "pack_stock_management": "decrmnt_products",
+        "is_pack": null,
+        "formato_peq": null,
+        "agua": null,
+        "categ_id": 1,
+        "name": "SERVICIOS DE NOTARIOS",
+        "type": "service",
+        "list_price": "1.00",
+        "description": null,
+        "id": 10,
+        "template_id": 10,
+        "ean13": null,
+        "default_code": null,
+        "pack_items": [],
+        "image_url": "http://gestiontest.fontoasis.es/website/image/product.template/10/image_medium"
+    }
+]
+```
+
+### Get All Products:
+URL: /products
+Method: GET
+Headers: ```json{
+    'content-type': 'application/json',
+    'Authorization': "eyJ0eXAiOiJ_5ysce6YET5Ew"
+}```
+Description: This endpoint gives details of all products in a list of json object present in Odoo
+
+Response:
+```json
+[
+    {
+        "pack_stock_management": "decrmnt_products",
+        "is_pack": null,
+        "formato_peq": null,
+        "agua": null,
+        "categ_id": 1,
+        "name": "SERVICIOS DE NOTARIOS",
+        "type": "service",
+        "list_price": "1.00",
+        "description": null,
+        "id": 10,
+        "template_id": 10,
+        "ean13": null,
+        "default_code": null,
+        "pack_items": [],
+        "image_url": "http://gestiontest.fontoasis.es/website/image/product.template/10/image_medium"
+    },
+    {
+        "pack_stock_management": "decrmnt_products",
+        "is_pack": null,
+        "formato_peq": null,
+        "agua": null,
+        "categ_id": 1,
+        "name": "SERVICIOS DE NOTARIOS",
+        "type": "service",
+        "list_price": "1.00",
+        "description": null,
+        "id": 10,
+        "template_id": 10,
+        "ean13": null,
+        "default_code": null,
+        "pack_items": [],
+        "image_url": "http://gestiontest.fontoasis.es/website/image/product.template/10/image_medium"
+    }
+]
+```
+
+### Get specific product:
+URL: /products/{prod_id}
+Method: GET
+Headers: ```json{
+    'content-type': 'application/json',
+    'Authorization': "eyJ0eXAiOiJ_5ysce6YET5Ew"
+}```
+Description: This endpoint gives details of a specifc products in a list of json object present in Odoo
+
+Response:
+```json
+[
+    {
+        "pack_stock_management": "decrmnt_products",
+        "is_pack": null,
+        "formato_peq": null,
+        "agua": null,
+        "categ_id": 1,
+        "name": "SERVICIOS DE NOTARIOS",
+        "type": "service",
+        "list_price": "1.00",
+        "description": null,
+        "id": 10,
+        "template_id": 10,
+        "ean13": null,
+        "default_code": null,
+        "pack_items": [],
+        "image_url": "http://gestiontest.fontoasis.es/website/image/product.template/10/image_medium"
+    }
+]
+```
+
+
+### Get specific order detail:
+URL: /orders/{order_id}
+Method: GET
+Headers: ```json{
+    'content-type': 'application/json',
+    'Authorization': "eyJ0eXAiOiJ_5ysce6YET5Ew"
+}```
 Description: This endpoint gives details of a specifc order in a json object present in Odoo
 
 Response:
@@ -435,6 +490,10 @@ Response:
 ### Create order in odoo with visit in MySQL:
 URL: /create-order
 Method: POST
+Headers: ```json{
+    'content-type': 'application/json',
+    'Authorization': "eyJ0eXAiOiJ_5ysce6YET5Ew"
+}```
 Description: This endpoint creates a order in odoo with input given and also creates a visit in MySQL db.
 Input: Input is a valid json object with missing field info available in response in case of failure:
 
@@ -454,5 +513,5 @@ visit is optional to update any visit column.
 
 Response:
 ```json
-{"status": "sucess", "order_id": <order_id>}
+{"status": "sucess", "order_id": 123}
 ```

@@ -25,10 +25,14 @@ class ValidateOrder(Schema):
 
 
 class ValidateInput(Schema):
-    username = fields.String(required=True)
     password = fields.String(required=True)
 
 
 class ValidateAddressInput(Schema):
     name = fields.String(required=True)
+    password = fields.String(required=True)
+
+class ValidateUserInput(Schema):
+    email = fields.String(required=True)
+    partner_id = fields.Integer(required=True)
     password = fields.String(required=True)
