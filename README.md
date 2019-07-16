@@ -515,3 +515,53 @@ Response:
 ```json
 {"status": "sucess", "order_id": 123}
 ```
+
+
+
+### Search a Partner ID:
+URL: /get-partner
+Method: POST
+Headers: ```json{
+    'content-type': 'application/json',
+    'Authorization': "eyJ0eXAiOiJ_5ysce6YET5Ew"
+}```
+Input: ```json {"tin": vat number}```
+Description: This endpoint will search a partner with provided VAT number and will return the partner data.
+
+Success Response:
+```json
+{
+    "status": "success",
+    "vat": "ESB60990298",
+    "id": 1872,
+    "name": "3G HIDRAULICA S.L.(DOMICILIO)",
+    "parent_id": null
+}
+```
+In case of failure:
+```json
+{"status": "fail", "user_id": False}
+```
+
+
+### Search a Partner ID:
+URL: /create-user
+Method: POST
+Headers: ```json{
+    'content-type': 'application/json',
+    'Authorization': "eyJ0eXAiOiJ_5ysce6YET5Ew"
+}```
+Input: ```json {"partner_id": 123, "email": test@test.com, "password": "newpass"}```
+Description: This endpoint will create a new user with partner id sent in request. Email would be login and password will be same as shared in post request.
+
+Success Response:
+```json
+{
+    "status": "success",
+    "user_id": 1872
+}
+```
+In case of failure:
+```json
+{"status": "fail", "errorDescription": "message"}
+```
