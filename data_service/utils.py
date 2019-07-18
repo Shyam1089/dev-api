@@ -562,11 +562,11 @@ def create_users_address(pid, request_json):
     return rows
 
 
-def get_partner(data):
+def get_partner(vat):
     rows = {'status':"NotFound"}
     partner_data = {}
     conn, pg_cur = get_pg_cursor()
-    tin = 'ES'+data.get('tin',"")
+    tin = 'ES'+vat
     rows.update({"vat":tin})
     if pg_cur:
         pg_cur.execute('SELECT id, name, vat, parent_id FROM "res_partner" WHERE vat=%s', (tin,))

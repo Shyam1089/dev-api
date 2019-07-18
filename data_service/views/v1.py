@@ -281,20 +281,15 @@ def create_new_order() -> Response:
 
 
 
-@schema.route("/get-partner", methods=['POST'])
+@schema.route("/get-partner", methods=['GET'])
 @utils.error_handler()
 def get_partnerss() -> Response:
-    headers = request.headers
-    uid = utils.verify_auth_token(headers.get("Authorization","Missing"))
-    if not uid:
-        return make_response(json.dumps({"error": "notAuthorized", "errorDescription":"Invalid/Expired Authorization Token!"}), status.HTTP_403_FORBIDDEN)
-    try:
-        request_json = request.get_json(force=True)
-    except marshmallow.exceptions.ValidationError as e:
-        request_json = {}
-
-
-    data = utils.get_partner(request_json)
+    args = request.args.copy()
+    vat_id = args.get('vat', False)
+    if vat_id:
+        data = utils.get_partner(vat_id)
+    else:
+        data = {"status":"fail", "errorDescription": "No vat provided in query param!"}
     resp: Response = make_response(json.dumps(data), status.HTTP_200_OK)
     resp.headers = JSON_TYPE_HEADERS
     return resp
