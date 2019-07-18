@@ -121,9 +121,9 @@ def get_products(pid=False):
     conn, pg_cur = get_pg_cursor()
     if pg_cur:
         if not pid:
-            pg_cur.execute("SELECT t.pack_stock_management, t.is_pack, t.formato_peq, t.agua, t.categ_id, t.name, t.type, t.list_price, t.description, v.id as id, t.id as template_id, v.ean13, v.default_code from product_template t INNER JOIN product_product v ON t.id=v.product_tmpl_id ORDER BY v.id" )
+            pg_cur.execute("SELECT t.minimum_qty, t.uom_id, t.pack_stock_management, t.is_pack, t.formato_peq, t.agua, t.categ_id, cat.name as categ_name, t.name, t.type, t.list_price, t.description, v.id as id, t.id as template_id, v.ean13, v.default_code from product_template t INNER JOIN product_product v ON t.id=v.product_tmpl_id INNER JOIN product_category cat ON t.categ_id=cat.id ORDER BY v.id" )
         else:
-            pg_cur.execute("SELECT t.pack_stock_management, t.is_pack, t.formato_peq, t.agua, t.categ_id, t.name, t.type, t.list_price, t.description, v.id as id, t.id as template_id, v.ean13, v.default_code  from product_template t INNER JOIN product_product v ON t.id=v.product_tmpl_id WHERE v.id=%s"%pid )
+            pg_cur.execute("SELECT t.minimum_qty, t.uom_id, t.pack_stock_management, t.is_pack, t.formato_peq, t.agua, t.categ_id, cat.name as categ_name, t.name, t.type, t.list_price, t.description, v.id as id, t.id as template_id, v.ean13, v.default_code from product_template t INNER JOIN product_product v ON t.id=v.product_tmpl_id INNER JOIN product_category cat ON t.categ_id=cat.id WHERE v.id=%s"%pid )
 
         rows = pg_cur.fetchall()
         for row in rows:
@@ -366,10 +366,12 @@ def reset_user_password(user_id, json_data):
 
 
 def create_order(json_data, visit_data):
-    visit_data, message = get_visit_data(json_data, visit_data)
-    if not visit_data:
-        return visit_data, message
-    print (visit_data)
+    print (json_data)
+    comments = ""
+    prod_ids = []
+    for line in json_data.get('order_line'):
+        prod_ids.append(int(line.get('product_id')))
+
     url = CONF.get("ODOO_URL")
     username = CONF.get("ODOO_USER")
     password = CONF.get("ODOO_PASS")
@@ -380,13 +382,34 @@ def create_order(json_data, visit_data):
     order_id = False
     if uid:
         try:
+            prod_data = sock.execute(db, uid, password, 'product.product', 'read', prod_ids ,["id", "name", "uom_id", "taxes_id", "lst_price", "formato_peq", "agua"])
+            for line in json_data.get('order_line'):
+                for ld in prod_data:
+                    if int(ld['id']) == int(line.get('product_id')):
+                        line.update({"name": ld['name'], "price_unit": ld["lst_price"], "product_uom": ld["uom_id"][0], "tax_id": [(6,0,ld['taxes_id'])]  })
+                        if ld['agua']:
+                            visit_data.update({
+                                'agua': 1
+                            })
+                        if ld['formato_peq']:
+                            visit_data.update({
+                                'formato_peq': 1
+                            })
+                        break
+                msg = str(line.get('product_uom_qty', "")) + " X " + line.get('name', "")+ "  "
+                comments += msg
+            visit_data.update({"comments": comments})
+            visit_data, message = get_visit_data(json_data, visit_data)
+            if not visit_data:
+                return visit_data, message
+            print (visit_data)
+            
             data = sock.execute(db, uid, password, 'sale.order', 'default_get', ["pricelist_id", "company_id", "team_id", "picking_policy", "warehouse_id"])
             data.update(json_data)
+            print (data)
             packs = []
             non_pack = []
             for line in data.get("order_line",[]):
-                if line.get("tax_id"):
-                    line.update({"tax_id" :[(6,0,[int(line.get("tax_id"))])]})
                 if line['is_pack']:
                     packs.append(line)
                 else:
@@ -409,29 +432,19 @@ def create_order(json_data, visit_data):
     if not order_id:
         return False, {"status": "fail", "errorDescription": str(e)}
     else:
+        visit_data.update({"odoo_order_id": order_id})
+        print (visit_data)
         connection = get_msql_cursor()
         if connection:
             try:
                 with connection.cursor() as cursor:
-                    cursor.execute('SELECT CLIENTE FROM clientes WHERE odoo_code=%s', json_data['partner_id'])
-                    # cursor.execute('SELECT CLIENTE FROM clientes WHERE odoo_code=%s', 1759)
-                    result = cursor.fetchone()
-                    if result:
-                        cursor.execute('SELECT * FROM visits WHERE cliente=%s', str(result.get("CLIENTE")))
-                        rows = cursor.fetchall()
-                        if rows:
-                            for row in rows:
-                                row.pop('modified', None)
-                                if row.get("status_date", False):
-                                    row.update({"status_date": row['status_date'].strftime("%m/%d/%Y, %H:%M:%S")})
-                                if row.get("created", False):
-                                    row.update({"created": row['created'].strftime("%m/%d/%Y, %H:%M:%S")})
-                                if row.get("visit_date", False):
-                                    row.update({"visit_date": row['visit_date'].strftime("%m/%d/%Y")})
+                    sql = "INSERT INTO visits (higiene, is_partial, creator, driver_id, agua_unserviced, visit_status_id, comments, averia, higienes_unserviced, status_date, agua, important, cleaning, fpeq_unserviced, visit_type_id, created, route_id, visit_date, cliente, odoo_order_id) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                    cursor.execute(sql, (visit_data.get('higiene'), visit_data.get('is_partial'), visit_data.get('creator'), visit_data.get('driver_id'), visit_data.get('agua_unserviced'), visit_data.get('visit_status_id'), visit_data.get('comments'), visit_data.get('averia'), visit_data.get('higienes_unserviced'), visit_data.get('status_date'), visit_data.get('agua'), visit_data.get('important'), visit_data.get('cleaning'), visit_data.get('fpeq_unserviced'), visit_data.get('visit_type_id'), visit_data.get('created'), visit_data.get('route_id'), visit_data.get('visit_date'), visit_data.get('cliente'), visit_data.get('odoo_order_id')))
+                    connection.commit()
+            except Exception as e:
+                print (e)
             finally:
                 connection.close()
-
-
     return {'status': "sucess", "order_id": order_id}, False
 
 
@@ -441,24 +454,11 @@ def get_visit_data(json_data, visit_data):
         'status_date': datetime.now()
     })
 
-    for line in json_data.get('order_line'):
-        prod_data = get_products(line.get('product_id'))
-        if not prod_data:
-            return False, make_response(json.dumps({"error": "BadRequest", "errorDescription":"Unable to find product with ID: %s"%(line.get('product_id'))}), status.HTTP_400_BAD_REQUEST)
-        if prod_data[0]['agua']:
-            visit_data.update({
-                'agua': 1
-            })
-        if prod_data[0]['formato_peq']:
-            visit_data.update({
-                'formato_peq': 1
-            })
-
     conn, pg_cur = get_pg_cursor()
     if pg_cur:
         name = False
         partner_id = json_data.get('partner_id')
-        partner_id = 2077
+        # partner_id = 2077
         pg_cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
         if pg_cur:
             pg_cur.execute("SELECT route_id FROM res_partner WHERE id=%s"%(str(partner_id)))
@@ -517,7 +517,7 @@ def calculate_date(rec):
         if rec == iso:
             break
         curr = curr + timedelta(days=1)
-    return curr
+    return curr.date()
 
 
 def get_users_address(pid=False):

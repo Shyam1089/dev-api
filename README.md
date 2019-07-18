@@ -318,12 +318,15 @@ Description: This endpoint gives a list of all products assocuated with the seci
 Response:
 ```json
 [
-    {
+    {   
+        "minimum_qty": 5,
+        "uom_id": 5,
         "pack_stock_management": "decrmnt_products",
         "is_pack": null,
         "formato_peq": null,
         "agua": null,
         "categ_id": 1,
+        "categ_name": "All",
         "name": "SERVICIOS DE NOTARIOS",
         "type": "service",
         "list_price": "1.00",
@@ -335,12 +338,15 @@ Response:
         "pack_items": [],
         "image_url": "http://gestiontest.fontoasis.es/website/image/product.template/10/image_medium"
     },
-    {
+    {   
+        "minimum_qty": 5,
+        "uom_id": 5,
         "pack_stock_management": "decrmnt_products",
         "is_pack": null,
         "formato_peq": null,
         "agua": null,
         "categ_id": 1,
+        "categ_name": "All",
         "name": "SERVICIOS DE NOTARIOS",
         "type": "service",
         "list_price": "1.00",
@@ -367,12 +373,15 @@ Description: This endpoint gives details of all products in a list of json objec
 Response:
 ```json
 [
-    {
+    {   
+        "minimum_qty": 5,
+        "uom_id": 5,
         "pack_stock_management": "decrmnt_products",
         "is_pack": null,
         "formato_peq": null,
         "agua": null,
         "categ_id": 1,
+        "categ_name": "All",
         "name": "SERVICIOS DE NOTARIOS",
         "type": "service",
         "list_price": "1.00",
@@ -384,12 +393,15 @@ Response:
         "pack_items": [],
         "image_url": "http://gestiontest.fontoasis.es/website/image/product.template/10/image_medium"
     },
-    {
+    {   
+        "minimum_qty": 5,
+        "uom_id": 5,
         "pack_stock_management": "decrmnt_products",
         "is_pack": null,
         "formato_peq": null,
         "agua": null,
         "categ_id": 1,
+        "categ_name": "All",
         "name": "SERVICIOS DE NOTARIOS",
         "type": "service",
         "list_price": "1.00",
@@ -416,12 +428,15 @@ Description: This endpoint gives details of a specifc products in a list of json
 Response:
 ```json
 [
-    {
+    {   
+        "minimum_qty": 5,
+        "uom_id": 5,
         "pack_stock_management": "decrmnt_products",
         "is_pack": null,
         "formato_peq": null,
         "agua": null,
         "categ_id": 1,
+        "categ_name": "All",
         "name": "SERVICIOS DE NOTARIOS",
         "type": "service",
         "list_price": "1.00",
@@ -503,8 +518,7 @@ Sample:
   "partner_id": 10,
   "partner_invoice_id": 36,
   "partner_shipping_id": 36,
-  "pricelist_id": 1,
-  "order_line": [{"name":"Laptop E5023", "product_uom_qty": 1.0, "price_unit": 20.0, "product_id": 33, "product_uom":1 ,"tax_id": 1, "is_pack": 0}],
+  "order_line": [{"product_uom_qty": 1.0, "product_id": 33, "is_pack": 0}],
   "visit": {"higiene": 1}
 }
 ```

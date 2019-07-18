@@ -2,13 +2,9 @@ from marshmallow import Schema, fields
 
 
 class ValidateOrderLine(Schema):
-    name = fields.String(required=True)
-    price_unit = fields.Decimal(required=True)
     product_id = fields.Integer(required=True)
-    product_uom = fields.Integer(required=True)
     product_uom_qty = fields.Decimal(required=True)
     is_pack = fields.Boolean(required=True)
-    tax_id = fields.Integer()
     discount = fields.Decimal()
 
 
