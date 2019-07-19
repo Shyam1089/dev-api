@@ -537,9 +537,9 @@ URL: /get-partner?vat=VAT_NUMBER
 Method: GET
 Headers: ```json{
     'content-type': 'application/json',
-    'Authorization': "eyJ0eXAiOiJ_5ysce6YET5Ew"
 }```
 Example: /get-partner?vat=B60990298
+
 Description: This endpoint will search a partner with provided VAT number and will return the partner data.
 
 Success Response:
