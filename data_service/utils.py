@@ -2,6 +2,8 @@ import json
 import traceback
 import os
 import pickle
+import string
+import random
 
 from datetime import datetime, timedelta
 from functools import wraps
@@ -24,6 +26,11 @@ from data_service.credentials import CONF
 JSON_TYPE_HEADERS = {'Content-Type': 'application/json'}
 
 TESTDATA_DIR = os.path.join(os.path.dirname(__file__), 'data')
+
+
+def string_generator(size):
+    chars = string.ascii_uppercase + string.ascii_lowercase + string.digits
+    return ''.join(random.choice(chars) for _ in range(size))
 
 
 def verify_auth_token(token):
@@ -344,7 +351,32 @@ def get_user_visits(pid):
     return rows
 
 
-def reset_user_password(user_id, json_data):
+# def reset_user_password(user_id, json_data):
+def reset_user_password(user_id):
+    pwd = string_generator(12)
+    print (pwd)
+    try:
+        url = CONF.get("ODOO_URL")
+        username = CONF.get("ODOO_USER")
+        password = CONF.get("ODOO_PASS")
+        db = CONF.get("ODOO_DB")
+        common = xmlrpclib.ServerProxy('{}/xmlrpc/2/common'.format(url))
+        sock = xmlrpclib.ServerProxy('{}/xmlrpc/2/object'.format(url))
+        uid = common.login(db, username, password)
+        result = sock.execute(db, uid, password, 'res.users', 'write', [user_id], {"password": pwd})
+        if result:
+            data = read_data()
+            data.pop(user_id)
+            # data.update({user_id: "exists"})
+            update_data(data)
+            sock.execute(db, uid, password, 'email.template', 'send_mail', CONF.get("PASSWORD_RESET_MAIL_TEMPLATE"), user_id, True)
+            return {'status': "success", "description": "Password reset successful!"}
+    except:
+        pass
+    return {'status': "fail",  "description": "Password reset failed!"}
+
+
+def change_user_password(user_id, json_data):
     try:
         url = CONF.get("ODOO_URL")
         username = CONF.get("ODOO_USER")
@@ -363,7 +395,6 @@ def reset_user_password(user_id, json_data):
     except:
         pass
     return {'status': "fail",  "description": "Password update failed!"}
-
 
 def create_order(json_data, visit_data):
     print (json_data)

@@ -180,15 +180,16 @@ Success Response:
 "address_id" - > newly created Address
 
 
-### Reset user password:
-URL: /user/reset-pass
+### Change user password:
+URL: /user/change-pass
 Method: POST
 Headers: ```json{
     'content-type': 'application/json',
     'Authorization': "eyJ0eXAiOiJ_5ysce6YET5Ew"
 }```
 Input: ```json{"password": "passowrd"}```
-Description: This endpoint will reset user's password.
+Description: This endpoint will change user's password.
+NOTE: User ID will be computed from the auth token passed.
 
 Success Response:
 ```json
@@ -197,6 +198,27 @@ Success Response:
 Failure response:
 ```json
 {"status": "fail"}
+```
+
+
+### Reset user password:
+URL: /user/reset-password
+Method: GET
+Headers: ```json{
+    'content-type': 'application/json',
+    'Authorization': "eyJ0eXAiOiJ_5ysce6YET5Ew"
+}```
+
+Description: This endpoint will reset the user's password with a randomly generated alphanumeric password and send an email to the user with the new password.
+NOTE: User ID will be computed from the auth token passed.
+
+Success Response:
+```json
+{"status": "success", "description": "Password reset successful!"}
+```
+Failure response:
+```json
+{"status": "fail", "description": "Password reset failed!"}
 ```
 
 

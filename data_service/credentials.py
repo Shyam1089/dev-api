@@ -15,5 +15,6 @@ CONF = {
 	"SQL_USER": "",
 	"SQL_PASS": "",
 	"SQL_DB": "",
+        "PASSWORD_RESET_MAIL_TEMPLATE": 26, 
 	"SECRET_KEY":  'the quick brown fox jumps over the lazy dog'
 }

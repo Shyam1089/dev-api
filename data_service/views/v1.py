@@ -157,9 +157,9 @@ def get_user_visits_info() -> Response:
     return resp
 
 
-@schema.route("/user/reset-password", methods=['POST'])
+@schema.route("/user/change-password", methods=['POST'])
 @utils.error_handler()
-def reset_usr_password() -> Response:
+def change_usr_password() -> Response:
     headers = request.headers
     uid = utils.verify_auth_token(headers.get("Authorization","Missing"))
     if not uid:
@@ -174,7 +174,7 @@ def reset_usr_password() -> Response:
         error = {key: " ,".join(value) for (key, value) in error.items() if isinstance(value, list)}
         error.update({'errorDescription': 'Invalid input.'})
         raise exceptions.ValidationError(errors=[error])
-    data = utils.reset_user_password(int(uid), request_json)
+    data = utils.change_user_password(int(uid), request_json)
     resp: Response = make_response(json.dumps(data), status.HTTP_200_OK)
     resp.headers = JSON_TYPE_HEADERS
     return resp
@@ -298,10 +298,10 @@ def get_partnerss() -> Response:
 @schema.route("/create-user", methods=['POST'])
 @utils.error_handler()
 def create_partnerss() -> Response:
-    headers = request.headers
-    uid = utils.verify_auth_token(headers.get("Authorization","Missing"))
-    if not uid:
-        return make_response(json.dumps({"error": "notAuthorized", "errorDescription":"Invalid/Expired Authorization Token!"}), status.HTTP_403_FORBIDDEN)
+    # headers = request.headers
+    # uid = utils.verify_auth_token(headers.get("Authorization","Missing"))
+    # if not uid:
+    #     return make_response(json.dumps({"error": "notAuthorized", "errorDescription":"Invalid/Expired Authorization Token!"}), status.HTTP_403_FORBIDDEN)
     try:
         request_json = request.get_json(force=True)
         if not isinstance(request_json, dict):
@@ -315,6 +315,19 @@ def create_partnerss() -> Response:
 
 
     data = utils.create_user_partner(request_json)
+    resp: Response = make_response(json.dumps(data), status.HTTP_200_OK)
+    resp.headers = JSON_TYPE_HEADERS
+    return resp
+
+
+@schema.route("/user/reset-password", methods=['GET'])
+@utils.error_handler()
+def rst_usr_password() -> Response:
+    headers = request.headers
+    uid = utils.verify_auth_token(headers.get("Authorization","Missing"))
+    if not uid:
+        return make_response(json.dumps({"error": "notAuthorized", "errorDescription":"Invalid/Expired Authorization Token!"}), status.HTTP_403_FORBIDDEN)
+    data = utils.reset_user_password(int(uid))
     resp: Response = make_response(json.dumps(data), status.HTTP_200_OK)
     resp.headers = JSON_TYPE_HEADERS
     return resp
