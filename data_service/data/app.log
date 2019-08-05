@@ -1,0 +1,15 @@
+ERROR  : 14:44:56: Error: Error connecting to the server: could not translate host name "http://168.235.81.147" to address: Name or service not known
+ERROR  : 12:42:16: Error: ERROR:  cannot drop table py3o_pdf_options because other objects depend on it
+DETAIL:  constraint ir_act_report_xml_pdf_options_id_fkey on table ir_act_report_xml depends on table py3o_pdf_options
+constraint py3o_server_pdf_options_id_fkey on table py3o_server depends on table py3o_pdf_options
+HINT:  Use DROP ... CASCADE to drop the dependent objects too.
+ERROR  : 12:42:37: Error: ERROR:  cannot drop table py3o_pdf_options because other objects depend on it
+DETAIL:  constraint ir_act_report_xml_pdf_options_id_fkey on table ir_act_report_xml depends on table py3o_pdf_options
+constraint py3o_server_pdf_options_id_fkey on table py3o_server depends on table py3o_pdf_options
+HINT:  Use DROP ... CASCADE to drop the dependent objects too.
+ERROR  : 12:51:27: Error: ERROR:  cannot truncate a table referenced in a foreign key constraint
+DETAIL:  Table "ir_act_report_xml" references "py3o_server".
+HINT:  Truncate table "ir_act_report_xml" at the same time, or use TRUNCATE ... CASCADE.
+ERROR  : 12:54:46: ERROR:  cannot drop table py3o_server because other objects depend on it
+DETAIL:  constraint ir_act_report_xml_py3o_server_id_fkey on table ir_act_report_xml depends on table py3o_server
+HINT:  Use DROP ... CASCADE to drop the dependent objects too.
