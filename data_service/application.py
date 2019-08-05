@@ -9,6 +9,7 @@ from logging.config import dictConfig
 
 from flask import Flask, make_response, request, Response, g
 from flask_api import status
+from flask_cors import CORS, cross_origin
 
 from werkzeug.exceptions import HTTPException
 
@@ -59,6 +60,7 @@ DEFAULT_LOGGING = {
 dictConfig(DEFAULT_LOGGING)
 logger = logging.getLogger('json')
 application = Flask(__name__)
+cors = CORS(application, resources={r"/*": {"origins": "*"}})
 if logger.hasHandlers():
     logger.handlers.clear()
 application.logger.addHandler(logging.StreamHandler(sys.stdout))

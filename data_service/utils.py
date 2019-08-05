@@ -631,7 +631,7 @@ def create_user_partner(data):
         if uid:
             result = sock.execute(db, uid, password, 'res.groups', 'search', [('is_portal','=',True)])
             vals = {
-                'partner_id': data.get("partner_id"),
+                'partner_id': int(data.get("partner_id")),
                 'login': data.get("email"),
                 'groups_id':[(6,0,result)]
             }
