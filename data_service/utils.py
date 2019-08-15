@@ -256,9 +256,13 @@ def get_user_data(pid=False):
         pg_cur.execute("""SELECT  "res_users"."id" as "id","res_users"."partner_id" as "partner_id","res_users"."login" as "login","res_users"."company_id" as "company_id","res_users"."signature" as "signature","res_users"."alias_id" as "alias_id" FROM "res_users" WHERE "res_users".id IN (%s)"""%(pid))
         rows = pg_cur.fetchone()
         if rows and rows.get('partner_id',False):
-            pg_cur.execute("""SELECT "website", "street", "street2", "city", "zip", "email", "phone", "mobile" FROM "res_partner" WHERE id IN (%s)"""%(rows['partner_id']))
+            pg_cur.execute("""SELECT "name","website", "street", "street2", "city", "zip", "email", "phone", "mobile", "state_id" as "state" FROM "res_partner" WHERE id IN (%s)"""%(rows['partner_id']))
             partner_data = pg_cur.fetchone()
             rows.update(partner_data)
+            if rows['state']:
+                pg_cur.execute("""SELECT "name" FROM "res_country_state" WHERE id IN (%s)"""%(rows['state']))
+                state_data = pg_cur.fetchone()
+                rows.update({"state":state_data['name']})
         else:
             rows = {'status':"NotFound"}
         pg_cur.close()
@@ -320,6 +324,13 @@ def get_erp_partner_id(pg_cur, pid):
 
 
 def get_user_visits(pid):
+    address = get_user_data(pid)
+    add_data = {}
+    add_data["street"] = address["street"]
+    add_data["city"] = address["city"]
+    add_data["zip"] = address["zip"]
+    add_data["state"] = address["state"]
+    add_data["name"] = address["name"]
     rows = {'status':"NotFound"}
     conn, pg_cur = get_pg_cursor()
     if pg_cur:
@@ -338,6 +349,7 @@ def get_user_visits(pid):
                             if rows:
                                 for row in rows:
                                     row.pop('modified', None)
+                                    row.update(add_data)
                                     if row.get("status_date", False):
                                         row.update({"status_date": row['status_date'].strftime("%m/%d/%Y, %H:%M:%S")})
                                     if row.get("created", False):
@@ -560,8 +572,14 @@ def get_users_address(pid=False):
         rows = pg_cur.fetchone()
         if rows and rows.get('partner_id',False):
             rows.update({"partner_id": rows['partner_id']})
-            pg_cur.execute("""SELECT "id", "name", "type", "function", "street", "street2", "city", "zip", "email", "phone", "mobile" FROM "res_partner" WHERE parent_id IN (%s)"""%(rows['partner_id']))
+            pg_cur.execute("""SELECT "id", "name", "type", "function", "street", "street2", "city", "zip", "email", "phone", "mobile", "state_id" as "state" FROM "res_partner" WHERE parent_id IN (%s)"""%(rows['partner_id']))
             address = pg_cur.fetchall()
+            for add in address:
+                if add['state']:
+                    pg_cur.execute("""SELECT "name" FROM "res_country_state" WHERE id IN (%s)"""%(add['state']))
+                    state_data = pg_cur.fetchone()
+                    add.update({"state":state_data['name']})
+
             rows.update({"status": "success"})
         pg_cur.close()
         conn.close()
