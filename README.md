@@ -43,6 +43,7 @@ Success Response:
     "company_id": 1,
     "signature": "<span>--<br>\nAdministrator</span>",
     "alias_id": 1,
+    "name": "Administrator",
     "website": null,
     "street": null,
     "street2": null,
@@ -50,7 +51,8 @@ Success Response:
     "zip": null,
     "email": "m.alzanillas@zclick.es",
     "phone": null,
-    "mobile": null
+    "mobile": null,
+    "state": null
 }
 ```
 
@@ -123,18 +125,19 @@ Success Response:
     "partner_id": 3,
     "status": "success",
     "address": [
-        {
-            "id": 12327,
-            "name": "str test",
+         {
+            "id": 12333,
+            "name": "Apploading Test",
             "type": "contact",
             "function": "reception",
             "street": "street",
             "street2": "street",
             "city": "Madrid",
-            "zip":  201301,
-            "email": "test@test",
+            "zip": "201301",
+            "email": "test@apploading.com",
             "phone": "12345",
-            "mobile": "12345"
+            "mobile": "12345",
+            "state": null
         }
     ]
 }
@@ -251,7 +254,13 @@ Success Response:
         "agua_unserviced": null,
         "higienes_unserviced": 0,
         "fpeq_unserviced": null,
-        "is_partial": null
+        "is_partial": null,
+        "odoo_order_id": null,
+        "street": null,
+        "city": null,
+        "zip": null,
+        "state": null,
+        "name": "Administrator"
     },
     {
         "id": 890,
@@ -274,7 +283,13 @@ Success Response:
         "agua_unserviced": null,
         "higienes_unserviced": 0,
         "fpeq_unserviced": null,
-        "is_partial": null
+        "is_partial": null,
+        "odoo_order_id": null,
+        "street": null,
+        "city": null,
+        "zip": null,
+        "state": null,
+        "name": "Administrator"
     }
 ]
 ```
