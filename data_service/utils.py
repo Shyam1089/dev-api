@@ -423,7 +423,12 @@ def create_order(json_data, visit_data):
     sock = xmlrpclib.ServerProxy('{}/xmlrpc/2/object'.format(url))
     uid = common.login(db, username, password)
     order_id = False
+    update_visit_check = False
+    create_default_visit = True
     if uid:
+        curr_hr = int(datetime.now().strftime("%H"))
+        if curr_hr<13:
+            update_visit_check = True
         try:
             prod_data = sock.execute(db, uid, password, 'product.product', 'read', prod_ids ,["id", "name", "uom_id", "taxes_id", "lst_price", "formato_peq", "agua"])
             for line in json_data.get('order_line'):
@@ -442,7 +447,7 @@ def create_order(json_data, visit_data):
                 msg = str(line.get('product_uom_qty', "")) + " X " + line.get('name', "")+ "  "
                 comments += msg
             visit_data.update({"comments": comments})
-            visit_data, message = get_visit_data(json_data, visit_data)
+            visit_data, message = get_visit_data(json_data, visit_data, update_visit_check)
             if not visit_data:
                 return visit_data, message
             print (visit_data)
@@ -472,26 +477,46 @@ def create_order(json_data, visit_data):
             order_id = False
             print (e)
             return False, {"status": "fail", "errorDescription": str(e)}
+
     if not order_id:
         return False, {"status": "fail", "errorDescription": str(e)}
     else:
-        visit_data.update({"odoo_order_id": order_id})
-        print (visit_data)
-        connection = get_msql_cursor()
-        if connection:
-            try:
-                with connection.cursor() as cursor:
-                    sql = "INSERT INTO visits (higiene, is_partial, creator, driver_id, agua_unserviced, visit_status_id, comments, averia, higienes_unserviced, status_date, agua, important, cleaning, fpeq_unserviced, visit_type_id, created, route_id, visit_date, cliente, odoo_order_id) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-                    cursor.execute(sql, (visit_data.get('higiene'), visit_data.get('is_partial'), visit_data.get('creator'), visit_data.get('driver_id'), visit_data.get('agua_unserviced'), visit_data.get('visit_status_id'), visit_data.get('comments'), visit_data.get('averia'), visit_data.get('higienes_unserviced'), visit_data.get('status_date'), visit_data.get('agua'), visit_data.get('important'), visit_data.get('cleaning'), visit_data.get('fpeq_unserviced'), visit_data.get('visit_type_id'), visit_data.get('created'), visit_data.get('route_id'), visit_data.get('visit_date'), visit_data.get('cliente'), visit_data.get('odoo_order_id')))
-                    connection.commit()
-            except Exception as e:
-                print (e)
-            finally:
-                connection.close()
+        if update_visit_check:
+            connection = get_msql_cursor()
+            if connection:
+                try:
+                    with connection.cursor() as cursor:
+                        now = datetime.now().date()
+                        cursor.execute('SELECT * FROM visits WHERE cliente=%s AND visit_date=%s', (str(visit_data.get('cliente')),now))
+                        result = cursor.fetchall()
+                        if results:
+                            create_default_visit = False
+                            for res in results:
+                                comments = res.get("comments") + " " + visit_data.get("comments")
+                                cursor.execute ("""UPDATE visits SET comments=%s, visit_type_id=%s, driver_id=%s, route_id=%s, odoo_order_id=%s WHERE id=%s""", (comments, visit_data['visit_type_id'], visit_data['driver_id'], visit_data['route_id'], visit_data['odoo_order_id'], res['id']))
+                                connection.commit()
+                except Exception as e:
+                    print (e)
+                finally:
+                    connection.close()
+        elif create_default_visit:
+            visit_data.update({"odoo_order_id": order_id})
+            print (visit_data)
+            connection = get_msql_cursor()
+            if connection:
+                try:
+                    with connection.cursor() as cursor:
+                        sql = "INSERT INTO visits (higiene, is_partial, creator, driver_id, agua_unserviced, visit_status_id, comments, averia, higienes_unserviced, status_date, agua, important, cleaning, fpeq_unserviced, visit_type_id, created, route_id, visit_date, cliente, odoo_order_id) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+                        cursor.execute(sql, (visit_data.get('higiene'), visit_data.get('is_partial'), visit_data.get('creator'), visit_data.get('driver_id'), visit_data.get('agua_unserviced'), visit_data.get('visit_status_id'), visit_data.get('comments'), visit_data.get('averia'), visit_data.get('higienes_unserviced'), visit_data.get('status_date'), visit_data.get('agua'), visit_data.get('important'), visit_data.get('cleaning'), visit_data.get('fpeq_unserviced'), visit_data.get('visit_type_id'), visit_data.get('created'), visit_data.get('route_id'), visit_data.get('visit_date'), visit_data.get('cliente'), visit_data.get('odoo_order_id')))
+                        connection.commit()
+                except Exception as e:
+                    print (e)
+                finally:
+                    connection.close()
     return {'status': "sucess", "order_id": order_id}, False
 
 
-def get_visit_data(json_data, visit_data):
+def get_visit_data(json_data, visit_data, update_visit_check):
     visit_data.update({
         'created': datetime.now(), 
         'status_date': datetime.now()
@@ -506,16 +531,18 @@ def get_visit_data(json_data, visit_data):
         if pg_cur:
             pg_cur.execute("SELECT route_id FROM res_partner WHERE id=%s"%(str(partner_id)))
             row = pg_cur.fetchone()
-            if row:
+            if row and row.get('route_id',False):
                 print (row)
                 pg_cur.execute("SELECT name FROM res_partner_routes WHERE id=%s"%(row['route_id']))
                 row = pg_cur.fetchone()
                 if row:
                     name = row.get("name")
+            else:
+                return False, {"error": "BadRequest", "errorDescription":"Unable to find route name in Odoo"}
         pg_cur.close()
         conn.close()
         if not name:
-            return False, make_response(json.dumps({"error": "BadRequest", "errorDescription":"Unable to find route name in Odoo"}), status.HTTP_400_BAD_REQUEST)
+            return False, {"error": "BadRequest", "errorDescription":"Unable to find route name in Odoo"}
         connection = get_msql_cursor()
         if connection:
             try:
@@ -528,24 +555,24 @@ def get_visit_data(json_data, visit_data):
                         datee = calculate_date(weekday)
                         visit_data.update({'driver_id': str(result['driver_id']), "visit_date": datee})
                     else:
-                        return False, make_response(json.dumps({"error": "BadRequest", "errorDescription":"No driver ID with name: %s found in mySQL"%(name)}), status.HTTP_400_BAD_REQUEST)
+                        return False,{"error": "BadRequest", "errorDescription":"No driver ID with name: %s found in mySQL"%(name)}
                     cursor.execute('SELECT CLIENTE FROM clientes WHERE odoo_code=%s', str(partner_id))
-                    # cursor.execute('SELECT CLIENTE FROM clientes WHERE odoo_code=%s', 1759)
+                    # -- cursor.execute('SELECT CLIENTE FROM clientes WHERE odoo_code=%s', 1759)
                     data = cursor.fetchone()
                     if data:
                         visit_data.update({'cliente': str(data.get("CLIENTE"))})
                     else:
-                        return False, make_response(json.dumps({"error": "BadRequest", "errorDescription":"No client with Odoo_code: %s, found in mySQL"%(str(partner_id))}), status.HTTP_400_BAD_REQUEST)
+                        return False, {"error": "BadRequest", "errorDescription":"No client with Odoo_code: %s, found in mySQL"%(str(partner_id))}
                     cursor.execute('SELECT * FROM clientes_configs WHERE cliente_id=%s', str(data.get("CLIENTE")))
                     conf_data = cursor.fetchone()
                     if conf_data:
                         visit_data.update({'route_id': str(conf_data.get('route_id'))})
                     else:
-                        return False, make_response(json.dumps({"error": "BadRequest", "errorDescription":"No client config found for client: %s, found in mySQL"%(str(data.get("CLIENTE")))}), status.HTTP_400_BAD_REQUEST)
+                        return False, {"error": "BadRequest", "errorDescription":"No client config found for client: %s, found in mySQL"%(str(data.get("CLIENTE")))}
             finally:
                 connection.close()
         else:
-            return False, make_response(json.dumps({"error": "BadRequest", "errorDescription":"Error in Mysql Connection"}), status.HTTP_400_BAD_REQUEST)
+            return False, {"error": "BadRequest", "errorDescription":"Error in Mysql Connection"}
 
     return visit_data, None
 
